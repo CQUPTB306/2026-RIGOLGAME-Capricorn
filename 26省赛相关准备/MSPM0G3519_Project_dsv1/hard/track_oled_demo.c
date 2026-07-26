@@ -5,6 +5,7 @@
 
 #include "track_oled_demo.h"
 #include "track.h"
+#include "grayscale.h"
 #include "oled.h"
 
 /**
@@ -14,7 +15,13 @@
 void TrackOLED_ShowStatus(SoftI2C_Obj *oled_bus)
 {
     static uint16_t frame = 0;          /* 帧计数, 不断增长 = 没卡住 */
-    uint8_t status = Track_Read_All();  /* 8 位, 0=检测到黑线, 1=白线 */
+    uint8_t sensor[8];
+    uint8_t status = 0;                 /* 8 位, 0=黑线, 1=白线 */
+    Grayscale_Read_All(sensor);
+    for (int i = 0; i < 8; i++) {
+        if (sensor[i] != 0)
+            status |= (1 << i);
+    }
     char    visual[9];                   /* 可视化 (8 字符 + '\0') */
     uint8_t count  = 0;                 /* 检测到黑线的传感器数量 */
     int     sum    = 0;                 /* 加权求和 */

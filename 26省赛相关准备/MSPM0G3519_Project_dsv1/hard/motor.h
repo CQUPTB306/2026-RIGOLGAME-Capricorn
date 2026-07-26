@@ -79,7 +79,6 @@ typedef struct {
     float    target_speed;      /* 目标速度 (mm/s)               */
     float    current_speed;     /* 实测速度 (mm/s)               */
     int16_t  output;            /* PID 输出 PWM 值               */
-    int32_t  last_count;        /* 编码器计数值快照              */
 } SpeedCtrl;
 
 /* ====================================================================

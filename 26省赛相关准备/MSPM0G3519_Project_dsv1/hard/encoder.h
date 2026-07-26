@@ -48,8 +48,13 @@ extern "C" {
 #define QEI_LEFT_PHB_PIN        DL_GPIO_PIN_26
 
 /* 右编码器 — PA2(PHA) + PB7(PHB)
- * 若 SysConfig 无法配置跨端口 QEI, 改 ENC2_USE_SOFTWARE 为 1 */
-#define ENC2_USE_SOFTWARE       1   /* 0=硬件QEI, 1=GPIO中断软件解码 (默认1: PA2+PB7跨端口硬件QEI不可行) */
+ *
+ * 默认 0 = 硬件 QEI (需 SysConfig 配置 QEI_1_INST).
+ *   若 PA2+PB7 跨端口硬件 QEI 不可行, 改为 1 并使用 GPIO 中断软件解码.
+ *   WARNING: 软件模式需自行实现 PA2/PB7 双边沿 GPIO ISR,
+ *   否则右轮速度始终为 0, PID 无反馈 → 飞车风险.
+ *   修改后请同步 encoder.c 中 #if ENC2_USE_SOFTWARE 分支的 #warning. */
+#define ENC2_USE_SOFTWARE       0   /* 0=硬件QEI(推荐), 1=GPIO中断软件解码(需自行实现ISR) */
 
 #if ENC2_USE_SOFTWARE
 #define QEI_RIGHT_INST          0   /* 不使用硬件实例 */
@@ -67,8 +72,6 @@ extern "C" {
 
 void    Encoder_Init(void);
 void    Encoder_GetSpeed(float *speed_l, float *speed_r);
-float   Encoder_GetSpeedLeft(void);
-float   Encoder_GetSpeedRight(void);
 int32_t Encoder_GetDistance(void);
 uint32_t Encoder_GetCallCount(void);
 void    Encoder_Reset(void);

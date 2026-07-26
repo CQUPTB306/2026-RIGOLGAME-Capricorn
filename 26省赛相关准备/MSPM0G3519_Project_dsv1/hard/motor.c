@@ -181,8 +181,6 @@ void Motor_Control_Init(void)
     g_speed_right.current_speed = 0.0f;
     g_speed_left.output         = 0;
     g_speed_right.output        = 0;
-    g_speed_left.last_count     = 0;
-    g_speed_right.last_count    = 0;
 
     g_motor_control_flag = 0;
     track_flag = 0;

@@ -24,7 +24,6 @@ TrackPID_TypeDef TrackPID;
 int IR_Weight[8] = {-90, -60, -39, -26, 0, 23, 38, 90};
 
 float BASE_SPEED_MM_S = 200.0f;    /* 基础目标速度 ~200mm/s (替代原 PWM 240) */
-float ir = 1.0f;
 
 Track_State g_track_state = TRACK_STATE_FOLLOW;
 volatile uint8_t g_turn_count = 0;
@@ -63,35 +62,6 @@ void Track_Init(void)
     turn_flag  = 0;
 
     delay_ms(10);
-}
-
-/* ==================== 传感器读取 ==================== */
-
-/**
- * @brief 读 8 路灰度, 返回 8 位位图 (bit0=通道0=最左, bit7=通道7=最右, 0=黑线)
- *
- * 适配原始代码的位序: bit0 最右 → 新代码需注意传感器物理排列.
- * 此处统一: sensor[0]=CH0(物理最左), sensor[7]=CH7(物理最右)
- * 返回: bit0=CH0 ... bit7=CH7 (0=检测到黑线)
- */
-static uint8_t Track_Read_All(void)
-{
-    uint8_t sensor[8];
-    uint8_t status = 0;
-    Grayscale_Read_All(sensor);
-
-    for (int i = 0; i < 8; i++)
-    {
-        if (sensor[i] == 0)      /* 黑线 → 对应位清零 */
-        {
-            /* status 对应位保持 0 */
-        }
-        else
-        {
-            status |= (1 << i);  /* 白底 → 对应位置 1 */
-        }
-    }
-    return status;
 }
 
 /* ==================== 加权偏差 ==================== */
@@ -223,25 +193,15 @@ void Track_Run(void)
                 Track_Enter_Turn();
             }
         }
-        else if (count == 8)
-        {
-            /* 全黑 (十字路口): 用上次偏差方向维持 */
-            error = g_last_error_sign * 30;  /* 模拟中等偏差 */
-            g_all_white_start_ms = 0;
-
-            /* 正常循迹: 循迹 PID → 目标速度 → 设定 */
-            track_flag = 1;
-            turn_flag  = 0;
-            int track_out = TrackPID_Calc(error);
-            float left_target  = BASE_SPEED_MM_S + track_out;
-            float right_target = BASE_SPEED_MM_S - track_out * 1.1f;
-            Motor_SetSpeed(left_target, right_target);
-        }
         else
         {
             /* 有黑线: 正常循迹 */
+            if (count == 8)
+            {
+                /* 全黑 (十字路口): 用上次偏差方向维持 */
+                error = g_last_error_sign * 30;  /* 模拟中等偏差 */
+            }
             g_all_white_start_ms = 0;
-
             track_flag = 1;
             turn_flag  = 0;
             int track_out = TrackPID_Calc(error);
@@ -278,6 +238,7 @@ void Track_Run(void)
 #endif
             Motor_Stop();
             g_track_state = TRACK_STATE_FOLLOW;
+            TrackPID.integral = 0.0f;   /* 转弯结束 → 清积分防止积分饱和 */
             g_all_white_start_ms = 0;
             g_turn_exit_ms = g_sys_tick_ms;
             turn_flag = 0;
@@ -310,6 +271,7 @@ void Track_Run(void)
             }
 #endif
             g_track_state = TRACK_STATE_FOLLOW;
+            TrackPID.integral = 0.0f;   /* 转弯结束 → 清积分防止积分饱和 */
             g_all_white_start_ms = 0;
             g_turn_exit_ms = g_sys_tick_ms;
 

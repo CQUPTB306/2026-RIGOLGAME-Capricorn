@@ -28,7 +28,6 @@ typedef struct {
 extern TrackPID_TypeDef TrackPID;
 extern int     IR_Weight[8];         /* 8路加权值 */
 extern float   BASE_SPEED_MM_S;      /* 基础速度 (mm/s), 替代原 BASE_SPEED */
-extern float   ir;                   /* 速度倍率 */
 
 /* ==================== 直角转弯状态机 ==================== */
 
