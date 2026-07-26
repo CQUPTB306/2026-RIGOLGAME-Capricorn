@@ -1,4 +1,5 @@
 #include "pca9685.h"
+#include "board.h"   /* delay_ms */
 
 // 内部函数：写一个寄存器
 static void pca_write_reg(uint8_t reg, uint8_t data)

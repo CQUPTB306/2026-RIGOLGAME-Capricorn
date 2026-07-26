@@ -445,14 +445,14 @@
               <FilePath>..\hard\soft_i2c_track.c</FilePath>
             </File>
             <File>
-              <FileName>track_gpio.c</FileName>
+              <FileName>grayscale.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\hard\track_gpio.c</FilePath>
+              <FilePath>..\hard\grayscale.c</FilePath>
             </File>
             <File>
-              <FileName>track_gpio.h</FileName>
+              <FileName>grayscale.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\hard\track_gpio.h</FilePath>
+              <FilePath>..\hard\grayscale.h</FilePath>
             </File>
             <File>
               <FileName>encoder.c</FileName>
