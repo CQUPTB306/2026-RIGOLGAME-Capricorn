@@ -24,28 +24,11 @@ extern "C" {
 /* ── 通道数 ── */
 #define GRAYSCALE_CHANNELS  8
 
-/* ── 引脚宏 (与 SysConfig 生成的 GrayS_PORT/GrayS_PIN_x 符号对应) ── */
-
-/* AD0 — PA12 */
-#define GRAY_AD0_PORT       GPIOA
-#define GRAY_AD0_PIN        DL_GPIO_PIN_12
-#define GRAY_AD0_IOMUX      IOMUX_PINCM37
-
-/* AD1 — PB23 */
-#define GRAY_AD1_PORT       GPIOB
-#define GRAY_AD1_PIN        DL_GPIO_PIN_23
-#define GRAY_AD1_IOMUX      IOMUX_PINCM56
-
-/* AD2 — PB27
- * ⚠️ IOMUX 值需 G3519 数据手册确认, 当前与 ti_msp_dl_config.h 保持一致 */
-#define GRAY_AD2_PORT       GPIOB
-#define GRAY_AD2_PIN        DL_GPIO_PIN_27
-#define GRAY_AD2_IOMUX      IOMUX_PINCM58
-
-/* OUT — PB8 (数字输入, 内部上拉) */
-#define GRAY_OUT_PORT       GPIOB
-#define GRAY_OUT_PIN        DL_GPIO_PIN_8
-#define GRAY_OUT_IOMUX      IOMUX_PINCM25
+/* ── 引脚宏: 由 ti_msp_dl_config.h 统一定义, 此处不再重复 ──
+ *     (GRAY_AD0_PORT, GRAY_AD0_PIN, GRAY_AD0_IOMUX,
+ *      GRAY_AD1_PORT, GRAY_AD1_PIN, GRAY_AD1_IOMUX,
+ *      GRAY_AD2_PORT, GRAY_AD2_PIN, GRAY_AD2_IOMUX,
+ *      GRAY_OUT_PORT, GRAY_OUT_PIN, GRAY_OUT_IOMUX) */
 
 /* ── MUX 控制宏 (兼容参考代码风格) ── */
 

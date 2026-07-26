@@ -64,17 +64,17 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define PWM_0_INST_IRQHandler                                   TIMA1_IRQHandler
 #define PWM_0_INST_INT_IRQN                                     (TIMA1_INT_IRQn)
 #define PWM_0_INST_CLK_FREQ                                             80000000
-/* GPIO defines for channel 0: PB4 */
+/* GPIO defines for channel 0: PB4 → IOMUX_PINCM17, TIMA1_CCP0 */
 #define GPIO_PWM_0_C0_PORT                                                 GPIOB
 #define GPIO_PWM_0_C0_PIN                                         DL_GPIO_PIN_4
-#define GPIO_PWM_0_C0_IOMUX                                      (IOMUX_PINCM13)
-#define GPIO_PWM_0_C0_IOMUX_FUNC                     IOMUX_PINCM13_PF_TIMA1_CCP0
+#define GPIO_PWM_0_C0_IOMUX                                      (IOMUX_PINCM17)
+#define GPIO_PWM_0_C0_IOMUX_FUNC                     IOMUX_PINCM17_PF_TIMA1_CCP0
 #define GPIO_PWM_0_C0_IDX                                    DL_TIMER_CC_0_INDEX
-/* GPIO defines for channel 1: PB5 */
+/* GPIO defines for channel 1: PB5 → IOMUX_PINCM18, TIMA1_CCP1 */
 #define GPIO_PWM_0_C1_PORT                                                 GPIOB
 #define GPIO_PWM_0_C1_PIN                                         DL_GPIO_PIN_5
-#define GPIO_PWM_0_C1_IOMUX                                      (IOMUX_PINCM14)
-#define GPIO_PWM_0_C1_IOMUX_FUNC                     IOMUX_PINCM14_PF_TIMA1_CCP1
+#define GPIO_PWM_0_C1_IOMUX                                      (IOMUX_PINCM18)
+#define GPIO_PWM_0_C1_IOMUX_FUNC                     IOMUX_PINCM18_PF_TIMA1_CCP1
 #define GPIO_PWM_0_C1_IDX                                    DL_TIMER_CC_1_INDEX
 
 
@@ -85,16 +85,16 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 #define QEI_0_INST                                                         TIMG8
 #define QEI_0_INST_IRQHandler                                   TIMG8_IRQHandler
 #define QEI_0_INST_INT_IRQN                                     (TIMG8_INT_IRQn)
-/* PHA Pin: PA24 */
+/* PHA Pin: PA26 → IOMUX_PINCM59, TIMG8_CCP0 (硬件QEI CCP0=编码器A相) */
 #define GPIO_QEI_0_PHA_PORT                                                GPIOA
-#define GPIO_QEI_0_PHA_PIN                                        DL_GPIO_PIN_24
-#define GPIO_QEI_0_PHA_IOMUX                                     (IOMUX_PINCM51)
-#define GPIO_QEI_0_PHA_IOMUX_FUNC                    IOMUX_PINCM51_PF_TIMG8_CCP0
-/* PHB Pin: PA26 */
+#define GPIO_QEI_0_PHA_PIN                                        DL_GPIO_PIN_26
+#define GPIO_QEI_0_PHA_IOMUX                                     (IOMUX_PINCM59)
+#define GPIO_QEI_0_PHA_IOMUX_FUNC                    IOMUX_PINCM59_PF_TIMG8_CCP0
+/* PHB Pin: PA24 → IOMUX_PINCM54, TIMG8_CCP1 (硬件QEI CCP1=编码器B相) */
 #define GPIO_QEI_0_PHB_PORT                                                GPIOA
-#define GPIO_QEI_0_PHB_PIN                                        DL_GPIO_PIN_26
-#define GPIO_QEI_0_PHB_IOMUX                                     (IOMUX_PINCM53)
-#define GPIO_QEI_0_PHB_IOMUX_FUNC                    IOMUX_PINCM53_PF_TIMG8_CCP1
+#define GPIO_QEI_0_PHB_PIN                                        DL_GPIO_PIN_24
+#define GPIO_QEI_0_PHB_IOMUX                                     (IOMUX_PINCM54)
+#define GPIO_QEI_0_PHB_IOMUX_FUNC                    IOMUX_PINCM54_PF_TIMG8_CCP1
 
 
 /* ====================================================================
@@ -133,7 +133,7 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 /* CIN1: PA25 (左电机 IN1) */
 #define CIN1_PORT                                                        (GPIOA)
 #define CIN1_PIN_0_PIN                                          (DL_GPIO_PIN_25)
-#define CIN1_PIN_0_IOMUX                                         (IOMUX_PINCM52)
+#define CIN1_PIN_0_IOMUX                                         (IOMUX_PINCM55)
 
 /* CIN2: PA27 (左电机 IN2)
  * ⚠️ PA27 原先用作 TFT SCL, TFT 已移除 */
@@ -144,13 +144,13 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
 /* DIN1: PA22 (右电机 IN1) */
 #define DIN1_PORT                                                        (GPIOA)
 #define DIN1_PIN_2_PIN                                          (DL_GPIO_PIN_22)
-#define DIN1_PIN_2_IOMUX                                         (IOMUX_PINCM46)
+#define DIN1_PIN_2_IOMUX                                         (IOMUX_PINCM47)
 
 /* DIN2: PB24 (右电机 IN2)
  * ⚠️ PB24 原先用作 TFT DC, TFT 已移除 */
 #define DIN2_PORT                                                        (GPIOB)
 #define DIN2_PIN_3_PIN                                          (DL_GPIO_PIN_24)
-#define DIN2_PIN_3_IOMUX                                         (IOMUX_PINCM57)
+#define DIN2_PIN_3_IOMUX                                         (IOMUX_PINCM52)
 
 
 /* ====================================================================
@@ -172,15 +172,15 @@ bool SYSCFG_DL_SYSCTL_SYSPLL_init(void);
  *  ⚠️ IOMUX 值需核对 — 以下值可能与 G3519 数据手册不一致!
  *     当前使用与 hard/grayscale.h 一致的占位值.
  * ==================================================================== */
-/* AD0: PA12 (MUX 通道选择 bit0) — 原 PWM CCP0 引脚, 已改为 PB4 */
+/* AD0: PA12 (MUX 通道选择 bit0) */
 #define GRAY_AD0_PORT                                                    (GPIOA)
 #define GRAY_AD0_PIN                                             (DL_GPIO_PIN_12)
-#define GRAY_AD0_IOMUX                                          (IOMUX_PINCM37)
+#define GRAY_AD0_IOMUX                                          (IOMUX_PINCM34)
 
-/* AD1: PB23 (MUX 通道选择 bit1) — 原 TFT CS 引脚, TFT 已移除 */
+/* AD1: PB23 (MUX 通道选择 bit1) */
 #define GRAY_AD1_PORT                                                    (GPIOB)
 #define GRAY_AD1_PIN                                             (DL_GPIO_PIN_23)
-#define GRAY_AD1_IOMUX                                          (IOMUX_PINCM56)
+#define GRAY_AD1_IOMUX                                          (IOMUX_PINCM51)
 
 /* AD2: PB27 (MUX 通道选择 bit2) — 原 TFT RST 引脚, TFT 已移除 */
 #define GRAY_AD2_PORT                                                    (GPIOB)
