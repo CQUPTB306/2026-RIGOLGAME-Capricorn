@@ -1,27 +1,23 @@
 /**
  * @file    empty.c
- * @brief   MSPM0G3519 主程序 — Keil MDK5
- * @note    基于 MSPM0G3507 CCS 版本移植:
- *          - 循迹小车主控制循环
- *          - 6路 GPIO 循迹传感器 + PID 控制
- *          - 双路电机 PWM 驱动 (TB6612)
- *          - ST7735 TFT 状态显示 (100Hz 刷新)
- *          - 编码器速度闭环 (MOTOR_USE_ENCODER=1)
+ * @brief   MSPM0G3519 主程序 — 级联 PID 循迹小车 (Keil MDK5)
+ *
+ *          架构:
+ *          - 100Hz TIMG0 中断 -> g_motor_control_flag -> 主循环轮询
+ *          - Motor_Control_Loop() 内含完整感知+策略+执行:
+ *            读灰度 -> 循迹PID -> 目标速度 -> 读编码器 -> 速度PID -> PWM
+ *          - 8路灰度 MUX 循迹传感器
+ *          - 双路编码器速度闭环 (硬件 QEI)
+ *          - TB6612 电机驱动 (PA25/PA27/PA22/PB24 + PB4/PB5 PWM)
  */
 
 #include "ti_msp_dl_config.h"
 #include "motor.h"
-#include "soft_i2c_simple.h"
-#include "pca9685.h"
+#include "grayscale.h"
 #include "track.h"
-#include "oled.h"
 #include "board.h"
-#include <stdio.h>
-#include "st7735_tft.h"
-#include "image1.h"
 
-
-/* ── 控制定时器中断 (TIMG0, 100Hz) ── */
+/* -- 控制定时器中断 (TIMG0, 100Hz) -- */
 
 void TIMG0_IRQHandler(void)
 {
@@ -35,8 +31,7 @@ void TIMG0_IRQHandler(void)
     }
 }
 
-
-/* ── 主函数 ── */
+/* -- 主函数 -- */
 
 int main(void)
 {
@@ -44,63 +39,30 @@ int main(void)
     board_init();
 
     /* 使能控制定时器中断 (TIMG0, 100Hz) */
-    NVIC_EnableIRQ(TIMER_0_INST_INT_IRQN);
+    NVIC_EnableIRQ(CONTROL_TIMER_INST_INT_IRQN);
 
     /* 外设初始化 */
-    TFT_Init();                     /* ST7735 TFT, 默认黑屏 */
-    SoftI2C_Init(&i2c_pca9685);     /* PA28/PA31: PCA9685 + OLED 共享 I2C */
-    delay_ms(10);
-    pca9685_Init();                 /* PCA9685 舵机驱动 */
-    Motor_Init();                   /* 电机 PWM + 方向引脚 */
-    Track_Init();                   /* 6路循迹传感器 GPIO */
-    PID_Init(&PID, 1.0f, 0, 0);    /* Kp=5.0, Ki=0, Kd=0 */
+    Motor_Init();           /* 电机 GPIO + PWM 启动            */
+    Motor_Control_Init();   /* 双编码器 + 速度 PID 初始化      */
+    Track_Init();           /* 8路灰度 + 循迹 PID + 状态机     */
+    Grayscale_Init();       /* 灰度 MUX 引脚初始化 (Track_Init 已调用, 此处冗余安全) */
 
-    /* 局部变量 */
-    uint8_t  Data       = 0;
-    int16_t  left_Speed  = PWM_MAX;
-    int16_t  right_Speed = PWM_MAX;
-
-    /* ── 主循环 ── */
+    /* -- 主循环 -- */
     while (1)
     {
-        /* 循迹控制 (PID + 状态机 → Motor_Set) */
-        Track_Run();
+        /* 100Hz 控制周期: TIMG0 中断标志位触发 */
+        if (g_motor_control_flag == 1)
+        {
+            g_motor_control_flag = 0;
 
-        /* 编码器速度闭环: 如需, 取消注释 Motor_Control_Loop()
-         * 当前使用纯开环 PWM, 直接由 Track_Run 控制 */
-         //Motor_Set(191, 209);  // 调试: 直接测试电机
+            /* 循迹控制 (8路灰度 -> 偏差 -> TrackPID -> Motor_SetSpeed) */
+            Track_Run();
 
-//        /* TFT 显示刷新 (100Hz, 由 TIMG0 控制定时器触发) */
-//        if (g_motor_control_flag == 1)
-//        {
-//            /* 读取传感器状态 */
-//            Data = Track_Read_All();
+            /* 速度闭环 (读编码器 -> 速度 PID -> Motor PWM 输出)
+             * 内部根据 track_flag/turn_flag 选择 PID 输出或硬转弯值 */
+            Motor_Control_Loop();
+        }
 
-//            /* 读取当前 PWM 占空比 (用于调试显示) */
-//            left_Speed  = PWM_MAX -
-//                DL_TimerA_getCaptureCompareValue(PWM_0_INST, DL_TIMER_CC_0_INDEX);
-//            right_Speed = PWM_MAX -
-//                DL_TimerA_getCaptureCompareValue(PWM_0_INST, DL_TIMER_CC_1_INDEX);
-
-//            /* TFT 显示: 6路传感器状态 */
-//            TFT_ShowNumber(10, 10, TFT_BLUE, TFT_BLACK, (Data >> 0) & 0x01);
-//            TFT_ShowNumber(10 * 2, 10, TFT_BLUE, TFT_BLACK, (Data >> 1) & 0x01);
-//            TFT_ShowNumber(10 * 3, 10, TFT_BLUE, TFT_BLACK, (Data >> 2) & 0x01);
-//            TFT_ShowNumber(10 * 4, 10, TFT_BLUE, TFT_BLACK, (Data >> 3) & 0x01);
-//            TFT_ShowNumber(10 * 5, 10, TFT_BLUE, TFT_BLACK, (Data >> 4) & 0x01);
-//            TFT_ShowNumber(10 * 6, 10, TFT_BLUE, TFT_BLACK, (Data >> 5) & 0x01);
-
-//            /* TFT 显示: 状态机 + PWM 速度 */
-//            TFT_ShowNumber(10, 30, TFT_BLUE2, TFT_BLACK, g_track_state);
-//            TFT_ShowNumber(10, 50, TFT_BLUE2, TFT_BLACK, left_Speed);
-//            TFT_ShowNumber(10, 70, TFT_BLUE2, TFT_BLACK, right_Speed);
-
-//            /* TFT 显示: 转弯计数 / 最大次数 */
-//            TFT_ShowNumber(10, 90, TFT_YELLOW, TFT_BLACK, g_turn_count);
-//            TFT_ShowNumber(40, 90, TFT_YELLOW, TFT_BLACK, TURN_MAX_COUNT);
-
-//            /* 清除标志 */
-//            g_motor_control_flag = 0;
-//        }
+        /* 其他低优先级任务可在此处添加 (如 TFT 显示刷新等) */
     }
 }
