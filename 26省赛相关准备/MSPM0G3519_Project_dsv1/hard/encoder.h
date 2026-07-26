@@ -49,7 +49,7 @@ extern "C" {
 
 /* 右编码器 — PA2(PHA) + PB7(PHB)
  * 若 SysConfig 无法配置跨端口 QEI, 改 ENC2_USE_SOFTWARE 为 1 */
-#define ENC2_USE_SOFTWARE       0   /* 0=硬件QEI, 1=GPIO中断软件解码 */
+#define ENC2_USE_SOFTWARE       1   /* 0=硬件QEI, 1=GPIO中断软件解码 (默认1: PA2+PB7跨端口硬件QEI不可行) */
 
 #if ENC2_USE_SOFTWARE
 #define QEI_RIGHT_INST          0   /* 不使用硬件实例 */
@@ -70,6 +70,7 @@ void    Encoder_GetSpeed(float *speed_l, float *speed_r);
 float   Encoder_GetSpeedLeft(void);
 float   Encoder_GetSpeedRight(void);
 int32_t Encoder_GetDistance(void);
+uint32_t Encoder_GetCallCount(void);
 void    Encoder_Reset(void);
 
 #ifdef __cplusplus

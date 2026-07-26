@@ -33,7 +33,7 @@ void Encoder_Init(void)
     /* 右编码器 — 硬件 QEI 或软件中断 */
 #if ENC2_USE_SOFTWARE
     /* 软件解码: 配置 PA2/PB7 为双边沿中断输入 (由 SysConfig 处理) */
-    /* 中断处理在 stm32f1xx_it.c 对应文件中实现 */
+    /* 软件解码中断在 GPIO 双边沿 ISR 中实现, 通过 NVIC 注册 */
     s_last_count_r = 0;
 #else
     DL_TimerG_startCounter(QEI_RIGHT_INST);
@@ -82,10 +82,10 @@ void Encoder_GetSpeed(float *speed_l, float *speed_r)
     s_speed_l = spd_l;
     s_speed_r = spd_r;
 
-    /* 累计距离 (两轮同向时累加平均) */
-    if (spd_l > 0.0f && spd_r > 0.0f)
+    /* 累计距离 (两轮同向时累加平均; 单轮零速仍累加另半轴位移) */
+    if (spd_l > 0.0f && spd_r >= 0.0f)
         s_distance += (float)((delta_l + delta_r) / 2) * MM_PER_PULSE;
-    else if (spd_l < 0.0f && spd_r < 0.0f)
+    else if (spd_l < 0.0f && spd_r <= 0.0f)
         s_distance -= (float)((delta_l + delta_r) / 2) * MM_PER_PULSE;
 
     s_call_count++;
@@ -120,13 +120,24 @@ int32_t Encoder_GetDistance(void)
 }
 
 /* ====================================================================
+ *           调试计数
+ * ==================================================================== */
+
+uint32_t Encoder_GetCallCount(void)
+{
+    return s_call_count;
+}
+
+/* ====================================================================
  *           重置
  * ==================================================================== */
 
 void Encoder_Reset(void)
 {
     s_last_count_l = (int16_t)DL_TimerG_getTimerCount(QEI_LEFT_INST);
-#if !ENC2_USE_SOFTWARE
+#if ENC2_USE_SOFTWARE
+    s_last_count_r = 0;
+#else
     s_last_count_r = (int16_t)DL_TimerG_getTimerCount(QEI_RIGHT_INST);
 #endif
     s_speed_l    = 0.0f;
