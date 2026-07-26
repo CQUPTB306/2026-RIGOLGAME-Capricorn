@@ -203,42 +203,52 @@ void Motor_SetSpeed(float left_mm_s, float right_mm_s)
  *
  * 调用链:
  *   1. Encoder_GetSpeed() → 读取左右轮实际速度
- *   2. PID_Calc_Motor()   → 速度 PID 计算
+ *   2. PID_Calc_Motor()   → 速度 PID 计算 (仅循迹模式)
  *   3. Motor()            → PWM 输出
  *
  * track_flag/turn_flag 控制输出模式 (参考 Capricorn):
- *   - turn_flag==1: 使用硬转弯值, 忽略 PID
- *   - track_flag==1: 使用 PID 输出
+ *   - turn_flag==1: 使用目标速度直接作为 PWM, 忽略 PID
+ *   - track_flag==1: 使用速度 PID 输出
+ *   - 默认: 停止电机
  */
 void Motor_Control_Loop(void)
 {
     float speed_l, speed_r;
 
-    /* 1. 读取双编码器速度 */
+    /* 1. 读取双编码器速度 (始终读取, 可用于诊断) */
     Encoder_GetSpeed(&speed_l, &speed_r);
     g_speed_left.current_speed  = speed_l;
     g_speed_right.current_speed = speed_r;
 
-    /* 2. 速度 PID 计算 */
-    float out_l = PID_Calc_Motor(&g_speed_left.pid,
-                                  g_speed_left.target_speed, speed_l);
-    float out_r = PID_Calc_Motor(&g_speed_right.pid,
-                                  g_speed_right.target_speed, speed_r);
+    /* 2. 速度 PID 计算 (仅循迹模式需要, 转弯模式直接使用目标值) */
+    if (track_flag == 1)
+    {
+        float out_l = PID_Calc_Motor(&g_speed_left.pid,
+                                      g_speed_left.target_speed, speed_l);
+        float out_r = PID_Calc_Motor(&g_speed_right.pid,
+                                      g_speed_right.target_speed, speed_r);
 
-    g_speed_left.output  = (int16_t)out_l;
-    g_speed_right.output = (int16_t)out_r;
+        g_speed_left.output  = (int16_t)out_l;
+        g_speed_right.output = (int16_t)out_r;
+    }
 
     /* 3. 电机输出 (根据模式标志选择) */
     if (turn_flag == 1)
     {
-        /* 转弯模式: 使用硬编码转弯值 (原地旋转) —
-         * 具体值由 Track_Run 在进入 TURN 状态时设定 */
-        Motor(g_speed_left.output, g_speed_right.output);
+        /* 转弯模式: 使用目标速度直接作为 PWM
+         * (Track_Run 通过 Motor_SetSpeed 设定为 ±TURN_SPEED_MM_S 范围,
+         *  不经过 PID, 直接输出到 Motor) */
+        Motor((int16_t)g_speed_left.target_speed,
+              (int16_t)g_speed_right.target_speed);
     }
     else if (track_flag == 1)
     {
-        /* 循迹模式: 使用 PID 输出 */
+        /* 循迹模式: 使用速度 PID 输出 */
         Motor(g_speed_left.output, g_speed_right.output);
     }
-    /* else: 空闲, 不输出 (Motor_Stop 由调用者处理) */
+    else
+    {
+        /* 空闲: 停止电机 */
+        Motor_Stop();
+    }
 }
