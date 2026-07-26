@@ -1,9 +1,12 @@
 /**
  * @file    track.h
- * @brief   6路 GPIO 循迹传感器模块 — MSPM0G3507
- * @note    基于 STM32 track.c 移植, 改用 GPIO 直读替代 I2C
- *          GPIO: PB6 PB7 PB8 PB9 PB10 PB11
- *          加权偏差 + PID 控制
+ * @brief   8路灰度循迹控制 — MSPM0G3519
+ * @note    级联 PID 外环: 8路灰度 MUX → 加权偏差 → 循迹 PID → 目标速度 (mm/s)
+ *          转弯状态机 + 计数保持原有逻辑
+ *
+ *          IR_Weight[8]: 8路线性内插原始 6路权值
+ *          原始: [-90, -39, -26, 23, 38, 90]
+ *          扩展: [-90, -60, -39, -26, 0, 23, 38, 90]  (实际需赛道标定)
  */
 
 #ifndef __TRACK_H
@@ -11,60 +14,51 @@
 
 #include <stdint.h>
 
-/*==================== 硬件配置 ====================*/
-
-#define TRACK_I2C_ADDR    0x12
-#define TRACK_REG_DATA    0x00
-
-/*==================== PID 结构 ====================*/
+/* ==================== 循迹 PID 结构 ==================== */
 
 typedef struct {
     float Kp, Ki, Kd;
-    int   error;
-    int   P, I, D;
-    int   last_error;
-    int   output;
-} PID_TypeDef;
+    float integral;
+    float prev_error;
+    int   output;               /* 速度偏差 (mm/s), 非 PWM! */
+} TrackPID_TypeDef;
 
-extern PID_TypeDef PID;
+/* ==================== 全局变量 ==================== */
 
-extern int     IR_Weight[6];
-extern uint16_t BASE_SPEED;
-extern float   ir;
-extern volatile int8_t g_track_error;
+extern TrackPID_TypeDef TrackPID;
+extern int     IR_Weight[8];         /* 8路加权值 */
+extern float   BASE_SPEED_MM_S;      /* 基础速度 (mm/s), 替代原 BASE_SPEED */
+extern float   ir;                   /* 速度倍率 */
 
-/*==================== 直角转弯 ====================*/
+/* ==================== 直角转弯状态机 ==================== */
 
 typedef enum {
     TRACK_STATE_FOLLOW,
     TRACK_STATE_TURN,
-    TRACK_STATE_STOP        /* 转弯次数达标, 停止循迹 */
+    TRACK_STATE_STOP
 } Track_State;
 
-#define TURN_SPEED          300   /* 转弯时基准速度 */
-#define TURN_ALL_WHITE_MS   20   /* 全白持续超过此时间才触发转弯 (ms) */
-#define TURN_TIMEOUT_MS     2000  /* 转弯超时, 防止无限旋转 */
+#define TURN_SPEED_MM_S         150.0f  /* 转弯时目标速度 (mm/s)    */
+#define TURN_ALL_WHITE_MS       20      /* 全白持续触发的阈值 (ms)  */
+#define TURN_TIMEOUT_MS         2000    /* 转弯超时保护 (ms)        */
 
-#define TRACK_TURN_COUNT_ENABLE  1   /* 1=达TURN_MAX_COUNT后停车; 0=不限次数, 永远循迹 */
-#define TURN_MAX_COUNT           12   /* 最大转弯次数 (仅TRACK_TURN_COUNT_ENABLE=1时生效) */
-#define TURN_COOLDOWN_MS         1500 /* 距上次成功计数不足此时间则只转弯不计数 (同一个弯去重, 1.5秒间隔) */
-#define TURN_MIN_DURATION_MS       80  /* 转弯最短持续时间, 低于此时长视为噪声, 不计数 */
+#define TRACK_TURN_COUNT_ENABLE  1      /* 1=达上限停车; 0=无限     */
+#define TURN_MAX_COUNT           12     /* 最大转弯次数              */
+#define TURN_COOLDOWN_MS         1500   /* 同弯去重间隔 (ms)        */
+#define TURN_MIN_DURATION_MS     80     /* 最短转弯时长 (ms)        */
 
 extern Track_State g_track_state;
-extern volatile uint8_t g_turn_count;   /* 当前转弯计数 */
+extern volatile uint8_t g_turn_count;
 
-/* 系统滴答计时器 (1ms 递增, 由 SysTick_Handler 维护) */
+/* 系统滴答 (1ms) */
 extern volatile uint32_t g_sys_tick_ms;
 
-/*==================== API ====================*/
+/* ==================== API ==================== */
 
 void    Track_Init(void);
-void PID_Init(PID_TypeDef *pid, float kp, float ki, float kd);
-uint8_t Track_Read_All(void);
-uint8_t Track_Read_Channel(uint8_t channel);
-int     Get_Track_Error(void);
-int     PID_Calc(int error);
-
 void    Track_Run(void);
+int     Get_Track_Error(void);
+int     TrackPID_Calc(int error);
+void    TrackPID_Init(TrackPID_TypeDef *pid, float kp, float ki, float kd);
 
 #endif
