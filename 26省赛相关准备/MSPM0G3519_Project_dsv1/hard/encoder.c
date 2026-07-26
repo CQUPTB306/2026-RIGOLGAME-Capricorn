@@ -67,17 +67,21 @@ void Encoder_GetSpeed(float *speed_l, float *speed_r)
     float spd_l     = (delta_l * MM_PER_PULSE) / CONTROL_PERIOD_S;
 
     /* ── 右编码器 ── */
+    int16_t delta_r;
+    float   spd_r;
 #if ENC2_USE_SOFTWARE
     #warning "ENC2_USE_SOFTWARE=1: 需自行实现 PA2/PB7 GPIO 双边沿中断 ISR 并累加 delta_r, 否则右轮速度始终为 0"
     /* 软件解码: delta 由 GPIO 中断累加, 此处读取并清零 */
     /* 若未实现 ISR, delta_r = 0 → 右轮速度始终为 0 → PID 无反馈 → 飞车风险! */
-    int16_t delta_r = 0;  /* TODO: 从中断累加变量读取 */
-    float spd_r     = (delta_r * MM_PER_PULSE) / CONTROL_PERIOD_S;
+    delta_r = 0;  /* TODO: 从中断累加变量读取 */
+    spd_r   = (delta_r * MM_PER_PULSE) / CONTROL_PERIOD_S;
 #else
-    int16_t count_r = (int16_t)DL_TimerG_getTimerCount(QEI_RIGHT_INST);
-    int16_t delta_r = (count_r - s_last_count_r) * ENC_RIGHT_DIR;
-    s_last_count_r  = count_r;
-    float spd_r     = (delta_r * MM_PER_PULSE) / CONTROL_PERIOD_S;
+    {
+        int16_t count_r = (int16_t)DL_TimerG_getTimerCount(QEI_RIGHT_INST);
+        delta_r = (count_r - s_last_count_r) * ENC_RIGHT_DIR;
+        s_last_count_r  = count_r;
+        spd_r   = (delta_r * MM_PER_PULSE) / CONTROL_PERIOD_S;
+    }
 #endif
 
     /* 保存 */
