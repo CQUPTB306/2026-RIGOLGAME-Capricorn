@@ -611,8 +611,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\hard\track_gpio.c</PathWithFileName>
-      <FilenameWithoutPath>track_gpio.c</FilenameWithoutPath>
+      <PathWithFileName>..\hard\grayscale.c</PathWithFileName>
+      <FilenameWithoutPath>grayscale.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -623,8 +623,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\hard\track_gpio.h</PathWithFileName>
-      <FilenameWithoutPath>track_gpio.h</FilenameWithoutPath>
+      <PathWithFileName>..\hard\grayscale.h</PathWithFileName>
+      <FilenameWithoutPath>grayscale.h</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
