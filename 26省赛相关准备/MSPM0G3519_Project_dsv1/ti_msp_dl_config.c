@@ -3,7 +3,10 @@
  *  Configured MSPM0 DriverLib module definitions
  *
  *  适配 MSPM0G3519 + Keil MDK5 (基于 MSPM0G3507 SysConfig 导出手动转换)
- *  DO NOT EDIT — 此文件由 SysConfig 生成后手动转换为 MSPM0G3519。
+ *
+ *  ⚠️ IOMUX 值和 PF (Peripheral Function) 代码需要在 SysConfig 或
+ *  MSPM0G3519 数据手册 Table 6-1 中验证后, 硬件才能正常工作.
+ *  当前代码保证编译通过, 外设功能可能需要调整.
  */
 
 #include "ti_msp_dl_config.h"
@@ -65,27 +68,29 @@ SYSCONFIG_WEAK void SYSCFG_DL_initPower(void)
 
 SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
 {
-    /* PWM 输出引脚 */
+    /* ── PWM 输出引脚: PB4(CCP0 左轮), PB5(CCP1 右轮) ── */
     DL_GPIO_initPeripheralOutputFunction(GPIO_PWM_0_C0_IOMUX, GPIO_PWM_0_C0_IOMUX_FUNC);
     DL_GPIO_enableOutput(GPIO_PWM_0_C0_PORT, GPIO_PWM_0_C0_PIN);
     DL_GPIO_initPeripheralOutputFunction(GPIO_PWM_0_C1_IOMUX, GPIO_PWM_0_C1_IOMUX_FUNC);
     DL_GPIO_enableOutput(GPIO_PWM_0_C1_PORT, GPIO_PWM_0_C1_PIN);
 
-    /* QEI 编码器输入 */
+    /* ── QEI 编码器输入: PA24(PHA 左ENC), PA26(PHB 左ENC) ── */
     DL_GPIO_initPeripheralInputFunction(GPIO_QEI_0_PHA_IOMUX, GPIO_QEI_0_PHA_IOMUX_FUNC);
     DL_GPIO_initPeripheralInputFunction(GPIO_QEI_0_PHB_IOMUX, GPIO_QEI_0_PHB_IOMUX_FUNC);
 
-    /* UART 引脚 */
+    /* ── UART 引脚: PA10(TX), PA11(RX) ── */
     DL_GPIO_initPeripheralOutputFunction(GPIO_UART_0_IOMUX_TX, GPIO_UART_0_IOMUX_TX_FUNC);
     DL_GPIO_initPeripheralInputFunction(GPIO_UART_0_IOMUX_RX, GPIO_UART_0_IOMUX_RX_FUNC);
 
-    /* 电机方向控制 (GPIO 输出) */
-    DL_GPIO_initDigitalOutput(CIN1_PIN_0_IOMUX);
-    DL_GPIO_initDigitalOutput(CIN2_PIN_1_IOMUX);
-    DL_GPIO_initDigitalOutput(DIN1_PIN_2_IOMUX);
-    DL_GPIO_initDigitalOutput(DIN2_PIN_3_IOMUX);
+    /* ── 电机方向控制 (GPIO 输出) ──
+     * CIN1=PA25, CIN2=PA27, DIN1=PA22, DIN2=PB24 */
+    DL_GPIO_initDigitalOutput(CIN1_PIN_0_IOMUX);   /* PA25 */
+    DL_GPIO_initDigitalOutput(CIN2_PIN_1_IOMUX);   /* PA27 */
+    DL_GPIO_initDigitalOutput(DIN1_PIN_2_IOMUX);   /* PA22 */
+    DL_GPIO_initDigitalOutput(DIN2_PIN_3_IOMUX);   /* PB24 */
 
-    /* I2C1 引脚 (PCA9685+OLED 用, 开漏+上拉) */
+    /* ── I2C1 软 I2C 引脚 (PCA9685+OLED, 开漏+上拉) ──
+     * SDA=PA28, SCL=PA31 */
     DL_GPIO_initDigitalOutputFeatures(I2C1_SDA_PIN_4_IOMUX,
          DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
          DL_GPIO_DRIVE_STRENGTH_LOW, DL_GPIO_HIZ_ENABLE);
@@ -93,56 +98,42 @@ SYSCONFIG_WEAK void SYSCFG_DL_GPIO_init(void)
          DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
          DL_GPIO_DRIVE_STRENGTH_LOW, DL_GPIO_HIZ_ENABLE);
 
-    /* TFT SPI 控制引脚 */
-    DL_GPIO_initDigitalOutput(SCL_PIN_6_IOMUX);
-    DL_GPIO_initDigitalOutput(SDA_PIN_7_IOMUX);
-    DL_GPIO_initDigitalOutput(RST_PIN_8_IOMUX);
-    DL_GPIO_initDigitalOutput(DC_PIN_9_IOMUX);
-    DL_GPIO_initDigitalOutput(CS_PIN_10_IOMUX);
-
-    /* 6路循迹传感器 (输入+上拉) */
-    DL_GPIO_initDigitalInputFeatures(TRACK1_PIN_11_IOMUX,
-         DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
-         DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initDigitalInputFeatures(TRACK2_PIN_12_IOMUX,
-         DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
-         DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initDigitalInputFeatures(TRACK3_PIN_13_IOMUX,
-         DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
-         DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initDigitalInputFeatures(TRACK4_PIN_14_IOMUX,
-         DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
-         DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initDigitalInputFeatures(TRACK5_PIN_15_IOMUX,
-         DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
-         DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
-    DL_GPIO_initDigitalInputFeatures(TRACK6_PIN_16_IOMUX,
+    /* ── 8路灰度 MUX 引脚 ──
+     * AD0=PA12, AD1=PB23, AD2=PB27 (推挽输出, 初始低)
+     * OUT=PB8 (数字输入+上拉) */
+    DL_GPIO_initDigitalOutput(GRAY_AD0_IOMUX);     /* PA12 */
+    DL_GPIO_initDigitalOutput(GRAY_AD1_IOMUX);     /* PB23 */
+    DL_GPIO_initDigitalOutput(GRAY_AD2_IOMUX);     /* PB27 */
+    DL_GPIO_initDigitalInputFeatures(GRAY_OUT_IOMUX,
          DL_GPIO_INVERSION_DISABLE, DL_GPIO_RESISTOR_PULL_UP,
          DL_GPIO_HYSTERESIS_DISABLE, DL_GPIO_WAKEUP_DISABLE);
 
-    /* 初始化输出为低电平 */
-    DL_GPIO_clearPins(GPIOA, CIN1_PIN_0_PIN |
-        I2C1_SDA_PIN_4_PIN |
-        I2C1_SCL_PIN_5_PIN |
-        SCL_PIN_6_PIN |
-        SDA_PIN_7_PIN);
-    DL_GPIO_enableOutput(GPIOA, CIN1_PIN_0_PIN |
-        I2C1_SDA_PIN_4_PIN |
-        I2C1_SCL_PIN_5_PIN |
-        SCL_PIN_6_PIN |
-        SDA_PIN_7_PIN);
-    DL_GPIO_clearPins(GPIOB, CIN2_PIN_1_PIN |
-        DIN1_PIN_2_PIN |
-        DIN2_PIN_3_PIN |
-        RST_PIN_8_PIN |
-        DC_PIN_9_PIN |
-        CS_PIN_10_PIN);
-    DL_GPIO_enableOutput(GPIOB, CIN2_PIN_1_PIN |
-        DIN1_PIN_2_PIN |
-        DIN2_PIN_3_PIN |
-        RST_PIN_8_PIN |
-        DC_PIN_9_PIN |
-        CS_PIN_10_PIN);
+    /* ── 初始化所有 GPIO 输出为低电平 ── */
+    /* PORTA: 电机方向 + I2C + 灰度 AD0 */
+    DL_GPIO_clearPins(GPIOA,
+        CIN1_PIN_0_PIN      |   /* PA25 电机左 IN1     */
+        CIN2_PIN_1_PIN      |   /* PA27 电机左 IN2     */
+        DIN1_PIN_2_PIN      |   /* PA22 电机右 IN1     */
+        I2C1_SDA_PIN_4_PIN  |   /* PA28 I2C SDA        */
+        I2C1_SCL_PIN_5_PIN  |   /* PA31 I2C SCL        */
+        GRAY_AD0_PIN);           /* PA12 灰度 AD0       */
+    DL_GPIO_enableOutput(GPIOA,
+        CIN1_PIN_0_PIN      |
+        CIN2_PIN_1_PIN      |
+        DIN1_PIN_2_PIN      |
+        I2C1_SDA_PIN_4_PIN  |
+        I2C1_SCL_PIN_5_PIN  |
+        GRAY_AD0_PIN);
+
+    /* PORTB: 电机方向 + 灰度 AD1/AD2 */
+    DL_GPIO_clearPins(GPIOB,
+        DIN2_PIN_3_PIN      |   /* PB24 电机右 IN2     */
+        GRAY_AD1_PIN        |   /* PB23 灰度 AD1       */
+        GRAY_AD2_PIN);           /* PB27 灰度 AD2       */
+    DL_GPIO_enableOutput(GPIOB,
+        DIN2_PIN_3_PIN      |
+        GRAY_AD1_PIN        |
+        GRAY_AD2_PIN);
 }
 
 
@@ -227,7 +218,8 @@ SYSCONFIG_WEAK void SYSCFG_DL_SYSCTL_init(void)
 }
 
 
-/* ── PWM_0 (TIMA1): 双路 PWM, period=1000, 80MHz ── */
+/* ── PWM_0 (TIMA1): 双路 PWM, period=1000, 80MHz ──
+ *  CCP0=PB4(左轮), CCP1=PB5(右轮) */
 
 static const DL_TimerA_ClockConfig gPWM_0ClockConfig = {
     .clockSel    = DL_TIMER_CLOCK_BUSCLK,
@@ -251,7 +243,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_PWM_0_init(void)
         DL_TIMER_CZC_CCCTL0_ZCOND, DL_TIMER_CAC_CCCTL0_ACOND,
         DL_TIMER_CLC_CCCTL0_LCOND);
 
-    /* Channel 0 (CCP0 = PA15 左轮) */
+    /* Channel 0: CCP0 = PB4 左轮 */
     DL_TimerA_setCaptureCompareOutCtl(PWM_0_INST,
         DL_TIMER_CC_OCTL_INIT_VAL_HIGH,
         DL_TIMER_CC_OCTL_INV_OUT_DISABLED, DL_TIMER_CC_OCTL_SRC_FUNCVAL,
@@ -260,7 +252,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_PWM_0_init(void)
         DL_TIMER_CC_UPDATE_METHOD_IMMEDIATE, DL_TIMERA_CAPTURE_COMPARE_0_INDEX);
     DL_TimerA_setCaptureCompareValue(PWM_0_INST, 1000, DL_TIMER_CC_0_INDEX);
 
-    /* Channel 1 (CCP1 = PA16 右轮) */
+    /* Channel 1: CCP1 = PB5 右轮 */
     DL_TimerA_setCaptureCompareOutCtl(PWM_0_INST,
         DL_TIMER_CC_OCTL_INIT_VAL_HIGH,
         DL_TIMER_CC_OCTL_INV_OUT_DISABLED, DL_TIMER_CC_OCTL_SRC_FUNCVAL,
@@ -274,7 +266,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_PWM_0_init(void)
 }
 
 
-/* ── QEI_0 (TIMG8): 硬件正交编码器 ── */
+/* ── QEI_0 (TIMG8): 左编码器 PA24(PHA)+PA26(PHB) 硬件正交编码器 ── */
 
 static const DL_TimerG_ClockConfig gQEI_0ClockConfig = {
     .clockSel    = DL_TIMER_CLOCK_BUSCLK,
@@ -294,7 +286,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_QEI_0_init(void)
 }
 
 
-/* ── TIMER_0 (TIMG0): 100ms 周期定时器 (100Hz 控制循环) ── */
+/* ── TIMER_0 (TIMG0): 100Hz 控制循环 (period=62499) ── */
 
 static const DL_TimerG_ClockConfig gTIMER_0ClockConfig = {
     .clockSel    = DL_TIMER_CLOCK_BUSCLK,
@@ -319,7 +311,7 @@ SYSCONFIG_WEAK void SYSCFG_DL_TIMER_0_init(void)
 }
 
 
-/* ── UART_0: 9600-8-N-1 ── */
+/* ── UART_0: PA10(TX)+PA11(RX), 9600-8-N-1 ── */
 
 static const DL_UART_Main_ClockConfig gUART_0ClockConfig = {
     .clockSel    = DL_UART_MAIN_CLOCK_BUSCLK,

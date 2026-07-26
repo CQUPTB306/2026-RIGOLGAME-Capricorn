@@ -54,7 +54,7 @@ extern "C" {
  *   WARNING: 软件模式需自行实现 PA2/PB7 双边沿 GPIO ISR,
  *   否则右轮速度始终为 0, PID 无反馈 → 飞车风险.
  *   修改后请同步 encoder.c 中 #if ENC2_USE_SOFTWARE 分支的 #warning. */
-#define ENC2_USE_SOFTWARE       0   /* 0=硬件QEI(推荐), 1=GPIO中断软件解码(需自行实现ISR) */
+#define ENC2_USE_SOFTWARE       1   /* 1=软件解码(PA2+PB7跨端口无法硬件QEI), 0=硬件QEI(需SysConfig配置QEI_1_INST) */
 
 #if ENC2_USE_SOFTWARE
 #define QEI_RIGHT_INST          0   /* 不使用硬件实例 */

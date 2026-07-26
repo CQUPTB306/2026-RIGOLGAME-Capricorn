@@ -36,10 +36,11 @@ extern "C" {
 #define GRAY_AD1_PIN        DL_GPIO_PIN_23
 #define GRAY_AD1_IOMUX      IOMUX_PINCM56
 
-/* AD2 — PB27 */
+/* AD2 — PB27
+ * ⚠️ IOMUX 值需 G3519 数据手册确认, 当前与 ti_msp_dl_config.h 保持一致 */
 #define GRAY_AD2_PORT       GPIOB
 #define GRAY_AD2_PIN        DL_GPIO_PIN_27
-#define GRAY_AD2_IOMUX      IOMUX_PINCM60
+#define GRAY_AD2_IOMUX      IOMUX_PINCM58
 
 /* OUT — PB8 (数字输入, 内部上拉) */
 #define GRAY_OUT_PORT       GPIOB
