@@ -59,3 +59,6 @@ dkms.conf
 
 # 开发过程性项目（625MB 中间版本，不入库）
 26省赛相关准备/other/
+
+# Local Git worktrees（嵌套仓库，不能入库）
+.worktrees/
