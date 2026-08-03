@@ -1,0 +1,10 @@
+device MSPM0G3507
+si SWD
+speed 4000
+r
+h
+erase
+loadfile Objects\empty_LP_MSPM0G3507_nortos_keil.hex
+r
+g
+qc

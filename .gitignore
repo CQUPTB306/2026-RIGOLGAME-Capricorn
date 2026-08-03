@@ -53,3 +53,6 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# 六路循迹备份压缩包不入库
+26省赛相关准备/final/*.rar

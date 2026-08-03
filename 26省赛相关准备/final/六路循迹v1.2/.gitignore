@@ -1,0 +1,41 @@
+# ── 备份压缩包 ─────────────────────────────
+*.rar
+*.zip
+*.7z
+
+# ── 内部开发文档（不公开）──────────────────
+docs/
+
+# ── TI DriverLib 官方库（编译前需从 TI 官网下载对应版本）──
+ti/
+
+# ── ARM CMSIS 官方库（Keil/EIDE 生成，随 SDK 提供）──
+keil/.cmsis/
+
+# ── 编译器输出 ──────────────────────────────
+keil/Objects/
+keil/Listings/
+keil/build/
+*.o
+*.d
+*.axf
+*.hex
+*.bin
+*.map
+*.lst
+*.crf
+*.dep
+
+# ── Keil 个人文件与日志 ─────────────────────
+*.uvguix.*
+keil/*.log
+keil/JLinkLog.txt
+keil/JLinkSettings.ini
+
+# ── IDE 缓存 / 个人设置 ─────────────────────
+keil/.eide/
+keil/.vscode/
+
+# ── 系统文件 ───────────────────────────────
+Thumbs.db
+Desktop.ini
